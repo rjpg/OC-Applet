@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ===================================================================
+
+   Build file for COPR-Applet
+
+Authors:
+  Rui Gonçalves <rjpg@fe.up.pt>
+
+Copyright:
+  Copyright (c) 2004-2006 FEUP-DCEG, Neptus.
+
+==================================================================== -->
+<project name="COPRApplet" default="info" basedir=".">
+	<property name="name" value="copr"/>
+	<property name="Name" value="COPR"/>
+	<property name="year" value="2006"/>
+
+	<property name="build.compiler" value="modern"/>
+	<property name="debug" value="off"/>
+	<property name="deprecation" value="off"/>
+
+	<!--property name="extra-compile-args" value="-Xlint:unchecked"/-->
+	<property name="extra-compile-args" value=""/>
+
+	<property name="src.dir" value="./src"/>
+	<property name="lib.dir" value="./lib"/>
+
+	<property name="build.dir" value="./build"/>
+	<!-- Where we put the neptus.jar we compile by default -->
+
+	<property name="build.classes" value="${build.dir}/classes"/>
+
+	<property name="exclude-svn" value="**/.svn/*"/>
+
+	<property name="dist.file" value="${name}-j_${version}"/>
+	<property name="dist.base.dir" value="./dist"/>
+	<!--<property name="dist.dir" value="./dist/${dist.file}"/>-->
+	<property name="dist.dir" value="${dist.base.dir}"/>
+
+	<property name="bin.dir" value="./bin"/>
+
+	<property name="jar.file" value="${name}.jar"/>
+
+	<path id="cp.path">
+		<fileset dir="${lib.dir}" casesensitive="false">
+			<include name="**/*.jar"/>
+			<include name="**/*.zip"/>
+		</fileset>
+		<pathelement location="./classes"/>
+	</path>
+
+	<property name="class.path" refid="cp.path"/>
+
+	<property name="certs.build.file" value="./certs/ant-genkeys.xml"/>
+	<property name="neptus.cert" value="./certs/genKeys/LSTS_FEUP.keystore"/>
+	<property name="login.cert" value="lsts"/>
+	<property name="pass.cert" value="Euvi2gatos"/>
+	<property environment="env"/>
+
+
+	<!-- =================================================================== -->
+	<!-- Info                                                                -->
+	<!-- =================================================================== -->
+	<target name="info" description="Displays some information of this ant build file.">
+		<echo message="--------------------------------------------------"/>
+		<echo message="  ${Name}"/>
+		<echo message="  Version: ${version}"/>
+		<echo message="--------------------------------------------------"/>
+		<echo message="  Project name: ${ant.project.name}"/>
+		<echo message="  The absolute path of the buildfile: ${ant.file}"/>
+		<echo message="  Ant version: ${ant.version}"/>
+		<echo message="  JVM version Ant detected: ${ant.java.version}"/>
+		<echo message="--------------------------------------------------"/>
+		<echo message=" ClassPath = ${class.path}"/>
+		<echo message="--------------------------------------------------"/>
+		<tstamp/>
+	</target>
+
+	<!-- =================================================================== -->
+	<!-- Prepares the build directories                                      -->
+	<!-- =================================================================== -->
+	<target name="prepare">
+		<mkdir dir="${build.dir}"/>
+		<mkdir dir="${build.classes}"/>
+		<mkdir dir="${dist.base.dir}"/>
+		<mkdir dir="${dist.dir}"/>
+		<mkdir dir="${bin.dir}"/>
+		<available file="${tests.dir}" property="tests-available"/>
+		<tstamp>
+			<format property="year" pattern="yyyy"/>
+		</tstamp>
+		<filterset id="neptus.filters">
+			<filter token="VERSION" value="${version}"/>
+			<filter token="DATE" value="${TODAY}"/>
+			<filter token="TIME" value="${TSTAMP}"/>
+			<filter token="COMPILED BY" value="${user.name}"/>
+			<filter token="NUMERIC_VERSION" value="${version.numeric}"/>
+		</filterset>
+		<fixcrlf srcdir="." eol="lf" eof="remove" includes="**/*.sh"/>
+		<fixcrlf srcdir="." eol="crlf" includes="**/*.bat"/>
+	</target>
+
+
+	<!-- =================================================================== -->
+	<!-- Prepares the docs directories                                       -->
+	<!-- =================================================================== -->
+	<target name="prepare.docs" depends="prepare">
+		<mkdir dir="${build.docs}"/>
+		<mkdir dir="${build.apidocs}"/>
+		<mkdir dir="${reports.tests}"/>
+		<mkdir dir="${reports.outputs}"/>
+	</target>
+
+
+	<!-- =================================================================== -->
+	<!-- Cleans the project build dir                                        -->
+	<!-- =================================================================== -->
+	<target name="clean" description="Deletes the ${build.dir}.">
+		<delete dir="${build.dir}" />
+	</target>
+
+
+	<!-- =================================================================== -->
+	<!-- Compile entire source tree                                          -->
+	<!-- =================================================================== -->
+
+	<target name="compile" depends="prepare" description="Compile src the normal way">
+		<echo message="compile entire source tree and copy  .properties and .res files to build tree."/>
+		<echo message="${class.path}"/>
+		<javac encoding="ISO-8859-1" target="1.5" srcdir="${src.dir}" destdir="${build.classes}"
+			excludes="${exclude-svn},old/**/*.*,**/junit/*.java"
+			includes="**/*.java" deprecation="${deprecation}"
+			debug="${debug}" classpath="${class.path}" fork="false">
+			<compilerarg line="${extra-compile-args}"/>
+		</javac>
+		<copy todir="${build.classes}">
+			<fileset dir="${src.dir}"
+				excludes="${exclude-svn},**/Thumbs.db,**/thumbs.db"
+				includes="**/*.xml,**/*.properties,**/*.res,images/**/*.*,models/**/*.*"/>
+		</copy>
+		<copy todir="${build.classes}" overwrite="true">
+			<fileset dir="${src.dir}">
+				<include name="**/version.txt"/>
+				<exclude name="${exclude-svn}" />
+			</fileset>
+			<filterset refid="neptus.filters"/>
+		</copy>
+	</target>
+
+
+	<!-- =================================================================== -->
+	<!-- Creats Neptus jar.                                                  -->
+	<!-- =================================================================== -->
+	<target name="jar" depends="compile" description="Creates the Neptus jar file.">
+		<echo message="Creating .jar file"/>
+		<!-- splash/ -->
+		<!--
+		<property name="class.path.jar" value=". lib/xercesImpl.jar lib/xml-apis.jar lib/xalan.jar lib/bsf.jar"/>
+		-->
+		<delete file="${bin.dir}/${jar.file}" />
+
+		<deltree dir="${bin.dir}/jar"/>
+    	<mkdir dir="${bin.dir}/jar"/>
+    	<unzip dest="${bin.dir}/jar" src="${lib.dir}/jep-2.4.0.jar"></unzip>
+    	<unzip dest="${bin.dir}/jar" src="${lib.dir}/xjep-latest.jar"></unzip>
+    	<unzip dest="${bin.dir}/jar" src="${lib.dir}/djep-latest.jar"></unzip>
+    	<jar destfile="${bin.dir}/${jar.file}" basedir="${bin.dir}/jar" update="true"/>
+		<deltree dir="${bin.dir}/jar"/>
+   		<jar destfile="${bin.dir}/${jar.file}" basedir="." update="true"
+			excludes="${exclude-svn}" includes="LICENSE"/>
+		<jar destfile="${bin.dir}/${jar.file}" basedir="${build.classes}"
+			index="true" update="true"
+			excludes="${exclude-svn}, *.class">
+			<manifest>
+				<attribute name="Built-By" value="${user.name}"/>
+				<attribute name="Built-On" value="${TODAY} - ${TSTAMP}"/>
+				<attribute name="Main-Class" value="pt.up.fe.dceg.neptus.loader.NeptusMain"/>
+				<!--
+				<attribute name="Class-Path" value="${class.path.jar}"/>
+				<attribute name="Main-Class" value="pt.up.fe.dceg.neptus.loader.MissionConsoleLoader"/>
+				-->
+				<section name="${Name}">
+					<attribute name="Specification-Title" value="${Name}"/>
+					<attribute name="Specification-Version" value="${version}"/>
+					<attribute name="Specification-Vendor" value="FEUP-DCEG (http://www.fe.up.pt/dcegwww)"/>
+					<attribute name="Implementation-Title" value="${name}"/>
+					<attribute name="Implementation-Version" value="${version} ${TODAY}"/>
+					<attribute name="Implementation-Vendor" value="FEUP (http://www.fe.up.pt)"/>
+				</section>
+			</manifest>
+		</jar>
+		<!-- exec dir="${build.dir}" executable="cmd.exe" vmlauncher="false">
+			 <arg line="jar -i ${jar.file}"/>
+		</exec -->
+		<signjar storetype="jceks" keystore="${neptus.cert}"
+			alias="${login.cert}" storepass="${pass.cert}"
+			jar="${bin.dir}/${jar.file}" />
+	</target>
+
+
+
+
+	<!-- =================================================================== -->
+	<!-- Signs the jars used in Neptus                                       -->
+	<!-- =================================================================== -->
+	<target name="signlibs">
+		<copy file="lib/jep-2.4.0.jar" todir="${dist.dir}/lib" />
+		<copy file="lib/xjep-latest.jar" todir="${dist.dir}/lib" />
+		<copy file="lib/djep-latest.jar" todir="${dist.dir}/lib" />
+		<signjar storetype="jceks" keystore="${neptus.cert}" alias="${login.cert}" storepass="${pass.cert}">
+			<fileset dir="${dist.dir}/lib" casesensitive="false">
+				<include name="**/*.jar"/>
+				<include name="**/*.zip"/>
+			</fileset>
+		</signjar>
+	</target>
+
+	<!-- =================================================================== -->
+	<!-- Calls the genKeys ant build.xml                                     -->
+	<!-- =================================================================== -->
+	<target name="genkeys"
+		description="Calls the genKeys ant build.xml to create the certificate to sign the jars.">
+		<ant inheritAll="false" antfile="${certs.build.file}"
+	  	target="genkeystoreJCEKS_RSA" />
+	</target>
+
+	<!-- =================================================================== -->
+	<!-- Calls the genCert ant build.xml                                     -->
+	<!-- =================================================================== -->
+	<target name="gencert"
+		description="Calls the genCert ant build.xml to create the certificate to sign the jars.">
+		<ant inheritAll="false" antfile="${certs.build.file}"
+	  		target="genCertJCEKS" />
+	</target>
+
+</project>

@@ -1,0 +1,360 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ===================================================================
+
+   Build file for Neptus Keys Generation
+
+Authors:
+  Paulo Dias <pdias@fe.up.pt>
+
+Copyright:
+  Copyright (c) 2005 FEUP-DEEC, LSTS, Neptus.
+
+==================================================================== -->
+<project name="Neptus_Certs" default="info" basedir=".">
+	<property environment="env"/>
+	<!-- =================================================================== -->
+	<!-- Defines variables used by the other targets                         -->
+	<!-- =================================================================== -->
+	<property name="version" value="1.0.0"/>
+	<property name="name" value="neptus_keygen"/>
+	<property name="Name" value="Neptus_KeyGen"/>
+	<property name="year" value="2001-2006"/>
+	<property name="genkeys.dir" value="./genKeys"/>
+	<property name="lib.dir" value="../lib"/>
+
+    <path id="class.path">
+        <fileset dir="${lib.dir}">
+        	<include name="**/*.jar"/>
+      	</fileset>
+        <pathelement location="."/>
+    </path>
+
+
+	<!-- =================================================================== -->
+	<!-- Info                                                                -->
+	<!-- =================================================================== -->
+	<target name="info">
+		<echo message="--------------------------------------------------"/>
+		<echo message="  ${Name}"/>
+		<echo message="  Version: ${version}"/>
+		<echo message="--------------------------------------------------"/>
+		<echo message="  Project name: ${genkeys.dir}"/>
+		<echo message="--------------------------------------------------"/>
+		<echo message="targets:"/>
+		<echo message="   genkeystoreJCEKS_RSA  &gt;  Creating Keys of RSA algorithm"/>
+		<echo message="                            and key size of 2048 into a JCEKS"/>
+		<echo message="                            keystore type."/>
+		<echo message="   genkeystoreJKS_RSA    &gt;  Creating Keys of RSA algorithm"/>
+		<echo message="                            and key size of 2048 into a JKS"/>
+		<echo message="                            keystore type."/>
+		<echo message="   genkeystoreJCEKS_DSA  &gt;  Creating Keys of DSA algorithm"/>
+		<echo message="                            and key size of 1024 into a JCEKS"/>
+		<echo message="                            keystore type."/>
+		<echo message="   genkeystoreJKS_DSA    &gt;  Creating Keys of DSA algorithm"/>
+		<echo message="                            and key size of 1024 into a JKS"/>
+		<echo message="                            keystore type."/>
+		<echo message="   toBase64              &gt;  All certs in ${genkeys.dir}"/>
+		<echo message="                            to Base64"/>
+		<echo message="   clean                 &gt;  Clean up the ${genkeys.dir} dir."/>
+		<echo message="--------------------------------------------------"/>
+		<echo message="  Gen. keys dir.: ${ant.project.name}"/>
+		<echo message="--------------------------------------------------"/>
+		<echo message="  The absolute path of the buildfile: ${ant.file}"/>
+		<echo message="  Ant version: ${ant.version}"/>
+		<echo message="  JVM version Ant detected: ${ant.java.version}"/>
+		<echo message="--------------------------------------------------"/>
+		<tstamp/>
+	</target>
+
+	<!-- =================================================================== -->
+	<!-- Prepare                                                                -->
+	<!-- =================================================================== -->
+	<target name="prepare">
+		<mkdir dir="${genkeys.dir}"/>
+		<tstamp>
+			<format property="year" pattern="yyyy"/>
+		</tstamp>
+	</target>
+
+	<!-- =================================================================== -->
+	<!-- Cleans everything: build tree, site tree, style docs in             -->
+	<!--         - build tree                                                -->
+	<!--         - distribution tree                                         -->
+	<!--         - site tree                                                 -->
+	<!--         - style docs expanded from xml-site-style.tar.gz.           -->
+	<!--           (MUST update contents of ${xalanonly-styledocs}           -->
+	<!--            if change contents of xml-site-style.tar.gz)             -->
+	<!--         - Javadoc overview and packqage-level html docs placed      -->
+	<!--           in the source tree                                        -->
+	<!-- =================================================================== -->
+	<target name="clean" description="Clean up the build">
+		<delete dir="${genkeys.dir}"/>
+	</target>
+
+	<!--
+	echo Creating Keystore for FEUP
+	echo password=feuppasswd
+	"%java_home%\bin\keytool" -genkey -alias feup  -keyalg RSA -sigalg sha1withRSA
+	-keysize 2048 -storetype JCEKS  -dname "CN=FEUP, OU=DCEG-DEEC, O=FEUP,L=Porto, C=PT"
+	-keystore ".\feup\FEUPkeystore" -validity 365
+	-->
+
+
+
+	<!-- =================================================================== -->
+	<!-- Creating Keys of RSA algorithm and key size of 2048 into a JKS keystore type-->
+	<!-- =================================================================== -->
+	<target name="genkeystoreJKS_RSA" description="Creating Keys of RSA algorithm and key size of 2048 into a JKS keystore type." depends="prepare">
+		<echo message="Creating Keys of RSA algorithm and key size of 2048 into a JKS keystore type."/>
+		<echo message=" ==================================================================="/>
+		<echo message="Let's fill up some info to create the keys:"/>
+		<input message="Please enter userId:" addproperty="user.id"/>
+		<input message="Please enter OrganizationId:" addproperty="organization.id"/>
+		<input message="Please enter Unit Name:" addproperty="unit.name"/>
+		<input message="Please enter city name:" addproperty="city.name"/>
+		<input message="Please enter country two letter code:" addproperty="country.code"/>
+		<echo message=" ==================================================================="/>
+		<echo message="Let's fill up locations and password info:"/>
+		<!-- input message="Please enter keystore file name:" addproperty="keystore.name"/ -->
+		<property name="keystore.name" value="${user.id}_${organization.id}.keystore"/>
+		<input message="Please enter keystore password:" addproperty="keystore.password"/>
+		<input message="Please enter key password [type 's' if the same as the keystore]:" addproperty="keytmp.password"/>
+		<condition property="key.password" value="${keystore.password}">
+			<equals arg1="s" arg2="${keytmp.password}"/>
+		</condition>
+		<condition property="key.password" value="${keytmp.password}">
+			<not><equals arg1="s" arg2="${keytmp.password}"/></not>
+		</condition>
+		<echo message=" ==================================================================="/>
+		<echo message="Let's generate the key pair:"/>
+		<genkey alias="${user.id}" storepass="${keystore.password}" keystore="${genkeys.dir}/${keystore.name}" storetype="JKS" keypass="${key.password}" keyalg="RSA" sigalg="SHA1withRSA" verbose="true" validity="365" keysize="2048">
+			<dname>
+				<param name="CN" value="${user.id}"/>
+				<param name="OU" value="${unit.name}"/>
+				<param name="O" value="${organization.id}"/>
+				<param name="L" value="${city.name}"/>
+				<param name="C" value="${country.code}"/>
+			</dname>
+		</genkey>
+		<echo message=" ==================================================================="/>
+		<echo message="Let's export the certificate:"/>
+		<exec dir="." executable="${env.JAVA_HOME}/bin/keytool">
+			<arg line="-export -alias ${user.id} -storepass ${keystore.password} -keypass ${key.password} -storetype JKS -keystore '${genkeys.dir}/${keystore.name}' -file '${genkeys.dir}/${user.id}_${organization.id}.crt' "/>
+		</exec>
+		<echo message=" ==================================================================="/>
+		<echo message="                    the end"/>
+		<echo message=" ==================================================================="/>
+	</target>
+
+
+
+	<!-- =================================================================== -->
+	<!-- Creating Keys of RSA algorithm and key size of 2048 into a JCEKS keystore type-->
+	<!-- =================================================================== -->
+	<target name="genkeystoreJCEKS_RSA" description="Creating Keys of RSA algorithm and key size of 2048 into a JCEKS keystore type." depends="prepare">
+		<echo message="Creating Keys of RSA algorithm and key size of 2048 into a JCEKS keystore type."/>
+		<echo message=" ==================================================================="/>
+		<echo message="Let's fill up some info to create the keys:"/>
+		<input message="Please enter userId:" addproperty="user.id"/>
+		<input message="Please enter OrganizationId:" addproperty="organization.id"/>
+		<input message="Please enter Unit Name:" addproperty="unit.name"/>
+		<input message="Please enter city name:" addproperty="city.name"/>
+		<input message="Please enter country two letter code:" addproperty="country.code"/>
+		<echo message=" ==================================================================="/>
+		<echo message="Let's fill up locations and password info:"/>
+		<!-- input message="Please enter keystore file name:" addproperty="keystore.name"/ -->
+		<property name="keystore.name" value="${user.id}_${organization.id}.keystore"/>
+		<input message="Please enter keystore password:" addproperty="keystore.password"/>
+		<input message="Please enter key password [type 's' if the same as the keystore]:" addproperty="keytmp.password"/>
+		<condition property="key.password" value="${keystore.password}">
+			<equals arg1="s" arg2="${keytmp.password}"/>
+		</condition>
+		<condition property="key.password" value="${keytmp.password}">
+			<not><equals arg1="s" arg2="${keytmp.password}"/></not>
+		</condition>
+		<echo message=" ==================================================================="/>
+		<echo message="Let's generate the key pair:"/>
+		<genkey alias="${user.id}" storepass="${keystore.password}" keystore="${genkeys.dir}/${keystore.name}" storetype="JCEKS" keypass="${key.password}" keyalg="RSA" sigalg="SHA1withRSA" verbose="true" validity="365" keysize="2048">
+			<dname>
+				<param name="CN" value="${user.id}"/>
+				<param name="OU" value="${unit.name}"/>
+				<param name="O" value="${organization.id}"/>
+				<param name="L" value="${city.name}"/>
+				<param name="C" value="${country.code}"/>
+			</dname>
+		</genkey>
+		<echo message=" ==================================================================="/>
+		<echo message="Let's export the certificate:"/>
+		<exec dir="." executable="${env.JAVA_HOME}/bin/keytool">
+			<arg line="-export -alias ${user.id} -storepass ${keystore.password} -keypass ${key.password} -storetype JCEKS -keystore '${genkeys.dir}/${keystore.name}' -file '${genkeys.dir}/${user.id}_${organization.id}.crt' "/>
+		</exec>
+		<echo message=" ==================================================================="/>
+		<echo message="                    the end"/>
+		<echo message=" ==================================================================="/>
+	</target>
+
+
+
+	<!-- =================================================================== -->
+	<!-- Creating Keys of DSA algorithm and key size of 1024 into a JKS keystore type-->
+	<!-- =================================================================== -->
+	<target name="genkeystoreJKS_DSA" description="Creating Keys of DSA algorithm and key size of 1024 into a JKS keystore type." depends="prepare">
+		<echo message="Creating Keys of DSA algorithm and key size of 1024 into a JKS keystore type."/>
+		<echo message=" ==================================================================="/>
+		<echo message="Let's fill up some info to create the keys:"/>
+		<input message="Please enter userId:" addproperty="user.id"/>
+		<input message="Please enter OrganizationId:" addproperty="organization.id"/>
+		<input message="Please enter Unit Name:" addproperty="unit.name"/>
+		<input message="Please enter city name:" addproperty="city.name"/>
+		<input message="Please enter country two letter code:" addproperty="country.code"/>
+		<echo message=" ==================================================================="/>
+		<echo message="Let's fill up locations and password info:"/>
+		<!-- input message="Please enter keystore file name:" addproperty="keystore.name"/ -->
+		<property name="keystore.name" value="${user.id}_${organization.id}.keystore"/>
+		<input message="Please enter keystore password:" addproperty="keystore.password"/>
+		<input message="Please enter key password [type 's' if the same as the keystore]:" addproperty="keytmp.password"/>
+		<condition property="key.password" value="${keystore.password}">
+			<equals arg1="s" arg2="${keytmp.password}"/>
+		</condition>
+		<condition property="key.password" value="${keytmp.password}">
+			<not><equals arg1="s" arg2="${keytmp.password}"/></not>
+		</condition>
+		<echo message=" ==================================================================="/>
+		<echo message="Let's generate the key pair:"/>
+		<genkey alias="${user.id}" storepass="${keystore.password}" keystore="${genkeys.dir}/${keystore.name}" storetype="JKS" keypass="${key.password}" keyalg="DSA" sigalg="SHA1withDSA" verbose="true" keysize="1024">
+			<dname>
+				<param name="CN" value="${user.id}"/>
+				<param name="OU" value="${unit.name}"/>
+				<param name="O" value="${organization.id}"/>
+				<param name="L" value="${city.name}"/>
+				<param name="C" value="${country.code}"/>
+			</dname>
+		</genkey>
+		<echo message=" ==================================================================="/>
+		<echo message="Let's export the certificate:"/>
+		<exec dir="." executable="${env.JAVA_HOME}/bin/keytool">
+			<arg line="-export -alias ${user.id} -storepass ${keystore.password} -keypass ${key.password} -storetype JKS -keystore '${genkeys.dir}/${keystore.name}' -file '${genkeys.dir}/${user.id}_${organization.id}.crt' "/>
+		</exec>
+		<echo message=" ==================================================================="/>
+		<echo message="                    the end"/>
+		<echo message=" ==================================================================="/>
+	</target>
+
+
+
+	<!-- =================================================================== -->
+	<!-- Creating Keys of DSA algorithm and key size of 1024 into a JCEKS keystore type-->
+	<!-- =================================================================== -->
+	<target name="genkeystoreJCEKS_DSA" description="Creating Keys of RSA algorithm and key size of 1024 into a JCEKS keystore type." depends="prepare">
+		<echo message="Creating Keys of DSA algorithm and key size of 2048 into a JCEKS keystore type."/>
+		<echo message=" ==================================================================="/>
+		<echo message="Let's fill up some info to create the keys:"/>
+		<input message="Please enter userId:" addproperty="user.id"/>
+		<input message="Please enter OrganizationId:" addproperty="organization.id"/>
+		<input message="Please enter Unit Name:" addproperty="unit.name"/>
+		<input message="Please enter city name:" addproperty="city.name"/>
+		<input message="Please enter country two letter code:" addproperty="country.code"/>
+		<echo message=" ==================================================================="/>
+		<echo message="Let's fill up locations and password info:"/>
+		<!-- input message="Please enter keystore file name:" addproperty="keystore.name"/ -->
+		<property name="keystore.name" value="${user.id}_${organization.id}.keystore"/>
+		<input message="Please enter keystore password:" addproperty="keystore.password"/>
+		<input message="Please enter key password [type 's' if the same as the keystore]:" addproperty="keytmp.password"/>
+		<condition property="key.password" value="${keystore.password}">
+			<equals arg1="s" arg2="${keytmp.password}"/>
+		</condition>
+		<condition property="key.password" value="${keytmp.password}">
+			<not><equals arg1="s" arg2="${keytmp.password}"/></not>
+		</condition>
+		<echo message=" ==================================================================="/>
+		<echo message="Let's generate the key pair:"/>
+		<genkey alias="${user.id}" storepass="${keystore.password}" keystore="${genkeys.dir}/${keystore.name}" storetype="JCEKS" keypass="${key.password}" keyalg="DSA" sigalg="SHA1withDSA" verbose="true" validity="365" keysize="1024">
+			<dname>
+				<param name="CN" value="${user.id}"/>
+				<param name="OU" value="${unit.name}"/>
+				<param name="O" value="${organization.id}"/>
+				<param name="L" value="${city.name}"/>
+				<param name="C" value="${country.code}"/>
+			</dname>
+		</genkey>
+		<echo message=" ==================================================================="/>
+		<echo message="Let's export the certificate:"/>
+		<exec dir="." executable="${env.JAVA_HOME}/bin/keytool">
+			<arg line="-export -alias ${user.id} -storepass ${keystore.password} -keypass ${key.password} -storetype JCEKS -keystore '${genkeys.dir}/${keystore.name}' -file '${genkeys.dir}/${user.id}_${organization.id}.crt' "/>
+		</exec>
+		<echo message=" ==================================================================="/>
+		<echo message="                    the end"/>
+		<echo message=" ==================================================================="/>
+	</target>
+
+	
+	
+	
+	
+	
+	
+	<!-- =================================================================== -->
+	<!-- Generate certificate from an existente JKS keystore type            -->
+	<!-- =================================================================== -->
+	<target name="genCertJKS" description="Generate certificate from an existente JKS keystore type." depends="prepare">
+		<echo message="Generate certificate from an existente JKS keystore type."/>
+		<echo message=" ==================================================================="/>
+		<echo message="Let's fill up some info to export the certificate:"/>
+		<input message="Please enter userId:" addproperty="user.id"/>
+		<input message="Please enter OrganizationId:" addproperty="organization.id"/>
+		<echo message=" ==================================================================="/>
+		<echo message="Let's fill up locations and password info:"/>
+		<input message="Please enter keystore file name:" addproperty="keystore.name"/>
+		<!--property name="keystore.name" value="${user.id}_${organization.id}.keystore"/ -->
+		<input message="Please enter keystore password:" addproperty="keystore.password"/>
+		<echo message=" ==================================================================="/>
+		<echo message="Let's export the certificate:"/>
+		<exec dir="." executable="${env.JAVA_HOME}/bin/keytool">
+			<arg line="-export -alias ${user.id} -storepass ${keystore.password} -keypass ${key.password} -storetype JKS -keystore '${keystore.name}' -file '${genkeys.dir}/${user.id}_${organization.id}.crt' "/>
+		</exec>
+		<echo message=" ==================================================================="/>
+		<echo message="                    the end"/>
+		<echo message=" ==================================================================="/>
+	</target>
+
+	
+	<!-- =================================================================== -->
+	<!-- Generate certificate from an existente JKS keystore type            -->
+	<!-- =================================================================== -->
+	<target name="genCertJCEKS" description="Generate certificate from an existente JCEKS keystore type." depends="prepare">
+		<echo message="Generate certificate from an existente JCEKS keystore type."/>
+		<echo message=" ==================================================================="/>
+		<echo message="Let's fill up some info to export the certificate:"/>
+		<input message="Please enter userId:" addproperty="user.id"/>
+		<input message="Please enter OrganizationId:" addproperty="organization.id"/>
+		<echo message=" ==================================================================="/>
+		<echo message="Let's fill up locations and password info:"/>
+		<input message="Please enter keystore file name:" addproperty="keystore.name"/>
+		<!--property name="keystore.name" value="${user.id}_${organization.id}.keystore"/ -->
+		<input message="Please enter keystore password:" addproperty="keystore.password"/>
+		<echo message=" ==================================================================="/>
+		<echo message="Let's export the certificate:"/>
+		<exec dir="." executable="${env.JAVA_HOME}/bin/keytool">
+			<arg line="-export -alias ${user.id} -storepass ${keystore.password} -keypass ${key.password} -storetype JCEKS -keystore '${keystore.name}' -file '${genkeys.dir}/${user.id}_${organization.id}.crt' "/>
+		</exec>
+		<echo message=" ==================================================================="/>
+		<echo message="                    the end"/>
+		<echo message=" ==================================================================="/>
+	</target>
+	
+	
+	
+	<target name="toBase64" description="All certs in ${genkeys.dir} to Base64">
+       <java classname="ToBase64">
+         <arg value="${genkeys.dir}"/>
+           <classpath refid="class.path"/>
+       </java>
+	</target>
+
+	<target name="compile">
+        <javac srcdir="." destdir="." debug="on">
+            <classpath refid="class.path"/>
+        </javac>
+    </target>
+
+</project>
